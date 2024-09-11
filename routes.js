@@ -31,7 +31,7 @@ routes.get("/", (req, res) => {
 routes.post("/client", (req, res) => {
   const { sessionName } = req.body;
   clients.set(sessionName, { client: new ClientW(sessionName) });
-  clients[sessionName].client.connectWASocket().then((qr) => {
+  clients.get(sessionName).client.connectWASocket().then((qr) => {
     res.end(JSON.stringify({ qr }));
   });
 });

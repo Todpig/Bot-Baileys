@@ -10,6 +10,7 @@ class ClientW {
     this.sock = null;
     this.messagesBeingSent = new Map();
     this.isCancelSending = false;
+    this.usersResponded = new Set();
     this.chats = [];
   }
 
@@ -43,6 +44,35 @@ class ClientW {
     this.chats = Object.values(await this.sock.groupFetchAllParticipating());
   }
 
+  replyMessages(message) {
+    const clientJid = message.key.remoteJid;
+
+    if (
+      !clientJid.includes("@g.us") &&
+      !message.key.fromMe &&
+      !this.hasUserResponded(clientJid)
+    ) {
+      this.sock.sendMessage(clientJid, {
+        text: "Hola, soy un bot",
+      });
+      this.usersResponded.add({ date: new Date(), clientJid });
+    }
+  }
+
+  hasUserResponded(clientJid) {
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    for (let user of this.usersResponded) {
+      if (user.clientJid === clientJid) {
+        const timeDifference = now - new Date(user.date);
+        if (timeDifference < oneDayInMs) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   async connectWASocket() {
     try {
       const WASock = new WASocket(sessionPath, this.sessionName);
@@ -58,10 +88,7 @@ class ClientW {
           }
 
           if (connection === "close") {
-            if (
-              statusCode === 515 ||
-              statusCode === DisconnectReason.timedOut
-            ) {
+            if (statusCode === 515) {
               console.log("Reconnecting...");
               return this.connectWASocket();
             }
@@ -77,6 +104,10 @@ class ClientW {
               }
             }, 50 * 1000);
           }
+        });
+        this.sock.ev.on("messages.upsert", (update) => {
+          const message = update.messages[0];
+          this.replyMessages(message);
         });
       });
     } catch (error) {

@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.17.1",
     "@types/": "whiskeysockets/baileys",
     "@types/node-cache": "^4.2.5",
     "@whiskeysockets/baileys": "^6.7.7",
