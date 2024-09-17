@@ -40,8 +40,52 @@ class ClientW {
     }
   }
 
+  async sendMessagePoll(
+    { question, answers, isAllowMultipleResponses },
+    chatsToSend
+  ) {
+    if (!question || !answers) return;
+    try {
+      const selectableCount = isAllowMultipleResponses ? null : 1;
+      for (let chat of chatsToSend) {
+        await this.sock.sendMessage(chat, {
+          poll: { name: question, values: answers, selectableCount },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async sendMessageSticker(chatId, pathMedia) {
+    try {
+      await this.sock.sendMessage(chatId, {
+        sticker: {
+          url: pathMedia,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async sendMessageAudio(chats, pathMedia) {
+    try {
+      for (let chat of chats) {
+        await this.sock.sendMessage(chat, {
+          audio: {
+            url: pathMedia,
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getchats() {
     this.chats = Object.values(await this.sock.groupFetchAllParticipating());
+    return this.chats;
   }
 
   replyMessages(message) {

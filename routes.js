@@ -31,9 +31,12 @@ routes.get("/", (req, res) => {
 routes.post("/client", (req, res) => {
   const { sessionName } = req.body;
   clients.set(sessionName, { client: new ClientW(sessionName) });
-  clients.get(sessionName).client.connectWASocket().then((qr) => {
-    res.end(JSON.stringify({ qr }));
-  });
+  clients
+    .get(sessionName)
+    .client.connectWASocket()
+    .then((qr) => {
+      res.end(JSON.stringify({ qr }));
+    });
 });
 
 routes.post("/message/send", async (req, res) => {
@@ -51,6 +54,27 @@ routes.delete("/message/:messageId", (req, res) => {
   });
   messages.delete(messageId);
   res.end("Message deleted!");
+});
+
+routes.post("/message/poll/send", async (req, res) => {
+  const { sessionName, chats, poll } = req.body;
+  if (!clients.get(sessionName)) return res.end("Client not found");
+  clients.get(sessionName).client.sendMessagePoll(poll, chats);
+  res.end("Sending poll!");
+});
+
+routes.post("/message/audio/send", async (req, res) => {
+  const { sessionName, chats, pathMedia } = req.body;
+  if (!clients.get(sessionName)) return res.end("Client not found");
+  clients.get(sessionName).client.sendMessageAudio(chats, pathMedia);
+  res.end("Sending media!");
+});
+
+routes.post("/message/media/send", async (req, res) => {
+  const { sessionName, chatId, pathMedia } = req.body;
+  if (!clients.get(sessionName)) return res.end("Client not found");
+  clients.get(sessionName).client.sendMessageSticker(chatId, pathMedia);
+  res.end("Sending media!");
 });
 
 function popLastMessage() {
