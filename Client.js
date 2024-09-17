@@ -83,6 +83,34 @@ class ClientW {
     }
   }
 
+  async sendMessageImage(chats, pathMedia) {
+    try {
+      for (let chat of chats) {
+        await this.sock.sendMessage(chat, {
+          image: {
+            url: pathMedia,
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async sendMessageVideo(chats, pathMedia) {
+    try {
+      for (let chat of chats) {
+        await this.sock.sendMessage(chat, {
+          video: {
+            url: pathMedia,
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getchats() {
     this.chats = Object.values(await this.sock.groupFetchAllParticipating());
     return this.chats;

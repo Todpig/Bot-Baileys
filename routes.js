@@ -63,18 +63,32 @@ routes.post("/message/poll/send", async (req, res) => {
   res.end("Sending poll!");
 });
 
+routes.post("/message/video/send", async (req, res) => {
+  const { sessionName, chats, pathMedia } = req.body;
+  if (!clients.get(sessionName)) return res.end("Client not found");
+  clients.get(sessionName).client.sendMessageVideo(chats, pathMedia);
+  res.end("Sending video!");
+});
+
+routes.post("/message/image/send", async (req, res) => {
+  const { sessionName, chats, pathMedia } = req.body;
+  if (!clients.get(sessionName)) return res.end("Client not found");
+  clients.get(sessionName).client.sendMessageImage(chats, pathMedia);
+  res.end("Sending image!");
+});
+
 routes.post("/message/audio/send", async (req, res) => {
   const { sessionName, chats, pathMedia } = req.body;
   if (!clients.get(sessionName)) return res.end("Client not found");
   clients.get(sessionName).client.sendMessageAudio(chats, pathMedia);
-  res.end("Sending media!");
+  res.end("Sending audio!");
 });
 
-routes.post("/message/media/send", async (req, res) => {
+routes.post("/message/sticker/send", async (req, res) => {
   const { sessionName, chatId, pathMedia } = req.body;
   if (!clients.get(sessionName)) return res.end("Client not found");
   clients.get(sessionName).client.sendMessageSticker(chatId, pathMedia);
-  res.end("Sending media!");
+  res.end("Sending sticker!");
 });
 
 function popLastMessage() {
