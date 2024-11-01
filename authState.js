@@ -4,7 +4,6 @@ const {
   SignalDataTypeMap,
 } = require("@whiskeysockets/baileys");
 const { BufferJSON, initAuthCreds, proto } = require("@whiskeysockets/baileys");
-const Whatsapp = require("../models/Whatsapp");
 const { MongoClient } = require("mongodb");
 const { logger } = require("../utils/logger");
 
@@ -32,7 +31,7 @@ async function connectToMongo() {
 }
 
 /**
- * @param {Whatsapp} whatsapp
+ * @param {{id: import("uuid").V4Options}} whatsapp
  * @returns {Promise<{ state: AuthenticationState, saveState: () => void }>}
  */
 const authStateMongo = async (whatsapp) => {
@@ -191,4 +190,4 @@ const authStateMongo = async (whatsapp) => {
   };
 };
 
-export default authStateMongo;
+module.exports = authStateMongo;
