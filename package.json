@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "fuzzball": "^2.1.2",
+    "mongodb": "^6.10.0",
     "node-cache": "^5.1.2",
     "pino": "^9.4.0",
     "qrcode-terminal": "^0.12.0"
