@@ -20,6 +20,10 @@ class ClientW {
     }
   }
 
+  deleteKeys() {
+    this.sock.authState.keys.clear();
+  }
+
   async cancelMessageSending() {
     this.isCancelSending = true;
   }
@@ -30,7 +34,6 @@ class ClientW {
       for (let chat of chats) {
         const messageKey = this.messagesBeingSent.get(chat.id);
         if (!messageKey) return;
-        console.log(messageKey);
         await delay(1500);
         await this.sock.sendMessage(chat.id, { delete: messageKey });
         this.messagesBeingSent.delete(chat.id);
@@ -161,9 +164,9 @@ class ClientW {
 
           if (connection === "close") {
             if (statusCode === 515) {
-              console.log("Reconnecting...");
               return this.connectWASocket();
             }
+            this.deleteKeys();
           }
 
           if (qr && this.id) {

@@ -22,5 +22,5 @@ app.use(express.json());
 app.use(routes);
 
 app.listen(port, () => {
-  console.log(`Server running in: http://localhost:${port}`);
+  console.log(`Server Http: http://localhost:${port}\nMongoDB: http://localhost:8081`);
 });
