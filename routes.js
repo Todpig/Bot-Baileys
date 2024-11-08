@@ -44,6 +44,7 @@ routes.post("/message/send", async (req, res) => {
   const { id, text } = message;
   if (!clients.get(sessionName)) return res.end("Client not found");
   messages.set(id, { chatName, text });
+  console.log(messages.size);
   res.end("Sending message!");
 });
 
@@ -99,23 +100,18 @@ function popLastMessage() {
 }
 
 (function () {
-  if (!fs.existsSync(sessionsPath)) fs.mkdirSync(sessionsPath);
-  const allSessions = fs.readdirSync(sessionsPath);
-  allSessions.forEach((sessionName) => {
-    clients.set(sessionName, { client: new ClientW(sessionName) });
-    clients.get(sessionName).client.connectWASocket();
-  });
+  const sessionName = "558496783580@c.whatsapp.net";
+  clients.set(sessionName, { client: new ClientW(sessionName) });
+  clients.get(sessionName).client.connectWASocket();
+
   setInterval(() => {
     if (!messages.size || !clients.size) return;
     const { chatName, text } = popLastMessage();
-    allSessions.forEach((client) => {
-      const chats = clients
-        .get(client)
-        .client.chats.filter(
-          (chat) => fuzz.ratio(chat.subject, chatName) >= 70
-        );
-      clients.get(client).client.sendMessage(text, chats);
-    });
+
+    const chats = clients
+      .get(sessionName)
+      .client.chats.filter((chat) => fuzz.ratio(chat.subject, chatName) >= 70);
+    clients.get(sessionName).client.sendMessage(text, chats);
   }, 100);
 })();
 

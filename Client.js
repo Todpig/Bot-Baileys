@@ -1,17 +1,17 @@
 const qrcode = require("qrcode-terminal");
-const { WASocket, DisconnectReason } = require("./WASocket");
+const { WASocket } = require("./WASocket");
 const { delay } = require("@whiskeysockets/baileys");
 const fs = require("fs");
 const sessionPath = "sessions/";
 
 class ClientW {
-  constructor(sessionName) {
-    this.sessionName = sessionName;
+  constructor(id) {
     this.sock = null;
     this.messagesBeingSent = new Map();
     this.isCancelSending = false;
     this.usersResponded = new Set();
     this.chats = [];
+    this.id = id;
   }
 
   disconectClient() {
@@ -147,7 +147,7 @@ class ClientW {
 
   async connectWASocket() {
     try {
-      const WASock = new WASocket(sessionPath, this.sessionName);
+      const WASock = new WASocket({ id: this.id });
       this.sock = await WASock.getWASocket();
       return new Promise((resolve, reject) => {
         this.sock.ev.on("connection.update", async (update) => {
@@ -155,7 +155,7 @@ class ClientW {
           const statusCode = lastDisconnect?.error?.output?.statusCode;
 
           if (connection === "open") {
-            console.log(`${this.sessionName} connected!`);
+            console.log(`${this.id} connected!`);
             await this.getchats();
           }
 
@@ -166,7 +166,7 @@ class ClientW {
             }
           }
 
-          if (qr && this.sessionName) {
+          if (qr && this.id) {
             qrcode.generate(qr, { small: true });
             resolve(qr);
             setTimeout(() => {
@@ -189,7 +189,7 @@ class ClientW {
 
   async deleteSession() {
     try {
-      fs.rmSync(sessionPath + this.sessionName, { recursive: true });
+      fs.rmSync(sessionPath + this.id, { recursive: true });
     } catch (error) {
       console.log("Error deleting session:", error);
     }

@@ -5,20 +5,15 @@ const {
   Browsers,
   delay,
 } = require("@whiskeysockets/baileys");
-const { v4 } = require("uuid");
 const authStateMongo = require("./authState");
 
 class WASocket {
-  constructor(sessionPath, sockPath) {
-    this.sessionPath = sessionPath;
-    this.sockPath = sockPath;
+  constructor(session) {
+    this.session = session;
     this.link_review_timeout = 30 * 1000;
   }
   async getWASocket() {
-    // const { state, saveCreds } = await useMultiFileAuthState(
-    //   `${this.sessionPath}/${this.sockPath}`
-    // );
-    const { state, saveCreds } = await authStateMongo({ id: v4() });
+    const { state, saveState } = await authStateMongo(this.session.id);
     const WASock = makeWASocket({
       auth: state,
       options: {
@@ -31,7 +26,7 @@ class WASocket {
       generateHighQualityLinkPreview: true,
       defaultQueryTimeoutMs: undefined,
     });
-    WASock.ev.on("creds.update", saveCreds);
+    WASock.ev.on("creds.update", saveState);
     return WASock;
   }
 }

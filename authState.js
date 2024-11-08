@@ -5,7 +5,6 @@ const {
 } = require("@whiskeysockets/baileys");
 const { BufferJSON, initAuthCreds, proto } = require("@whiskeysockets/baileys");
 const { MongoClient } = require("mongodb");
-const { logger } = require("../utils/logger");
 
 /**@type {{ [T in keyof SignalDataTypeMap]: string }} */
 const KEY_MAP = {
@@ -17,12 +16,13 @@ const KEY_MAP = {
   "sender-key-memory": "senderKeyMemory",
 };
 
-const { DB_URI = "mongodb://localhost:27017", DB_NAME } = process.env;
+const { DB_URI = "mongodb://admin:pass@localhost:27017", DB_NAME } =
+  process.env;
 const client = new MongoClient(DB_URI);
 
 async function connectToMongo() {
   try {
-    await client.connect();
+    await client.connect({ client: { w: "majority" } });
     console.log("Connected to MongoDB");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
@@ -31,7 +31,7 @@ async function connectToMongo() {
 }
 
 /**
- * @param {{id: import("uuid").V4Options}} whatsapp
+ * @param {{id: string}} whatsapp
  * @returns {Promise<{ state: AuthenticationState, saveState: () => void }>}
  */
 const authStateMongo = async (whatsapp) => {
@@ -49,9 +49,6 @@ const authStateMongo = async (whatsapp) => {
    * @param {*} value
    */
   const saveKey = async (type, key, value) => {
-    logger.debug(
-      `Storing key whatsappId: ${whatsappId} type: ${type} key: ${key}`
-    );
     try {
       await keysCollection.updateOne(
         { whatsappId, type, key },
@@ -59,7 +56,7 @@ const authStateMongo = async (whatsapp) => {
         { upsert: true }
       );
     } catch (error) {
-      logger.error(`Error storing key: ${error.message}`);
+      console.error(`Error saving key: ${error.message}`);
     }
   };
 
@@ -71,14 +68,8 @@ const authStateMongo = async (whatsapp) => {
   const getKey = async (type, key) => {
     try {
       const result = await keysCollection.findOne({ whatsappId, type, key });
-      logger.debug(
-        `${
-          result ? "Successfully" : "Failed to"
-        } recover key whatsappId: ${whatsappId} type: ${type} key: ${key}`
-      );
       return result ? JSON.parse(result.value) : null;
     } catch (error) {
-      logger.error(`Error retrieving key: ${error.message}`);
       return null;
     }
   };
@@ -88,13 +79,10 @@ const authStateMongo = async (whatsapp) => {
    * @param {string} key
    */
   const removeKey = async (type, key) => {
-    logger.debug(
-      `Deleting key whatsappId: ${whatsappId} type: ${type} key: ${key}`
-    );
     try {
       await keysCollection.deleteOne({ whatsappId, type, key });
     } catch (error) {
-      logger.error(`Error deleting key: ${error.message}`);
+      console.error(`Error deleting key: ${error.message}`);
     }
   };
 
@@ -125,7 +113,6 @@ const authStateMongo = async (whatsapp) => {
     const { keys } = resultB;
 
     if (Object.keys(keys).length) {
-      logger.debug("Starting conversion of keys to new format");
       const TYPE_MAP = {
         preKeys: "pre-key",
         sessions: "session",
@@ -137,7 +124,6 @@ const authStateMongo = async (whatsapp) => {
 
       for (const oldType of Object.keys(keys)) {
         const newType = TYPE_MAP[oldType];
-        logger.debug(`Converting keys of type ${oldType} to ${newType}`);
         for (const key of Object.keys(keys[oldType])) {
           await saveKey(newType, key, keys[oldType][key]);
         }
@@ -163,8 +149,7 @@ const authStateMongo = async (whatsapp) => {
               }
               data[id] = value;
             } catch (error) {
-              logger.error(`Error retrieving keys: ${error.message}`);
-              logger.error(`Stack trace: ${error.stack}`);
+              console.error("Error getting key:", error);
             }
           }
           return data;
@@ -183,6 +168,13 @@ const authStateMongo = async (whatsapp) => {
             }
           }
           await Promise.all(tasks);
+        },
+        clear: async (type) => {
+          try {
+            await keysCollection.deleteMany({ whatsappId, type });
+          } catch (error) {
+            console.error(`Error clearing keys: ${error.message}`);
+          }
         },
       },
     },
