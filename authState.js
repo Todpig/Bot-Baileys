@@ -23,25 +23,22 @@ const client = new MongoClient(DB_URI);
 async function connectToMongo() {
   try {
     await client.connect({ client: { w: "majority" } });
-    console.log("Connected to MongoDB");
   } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
     throw error;
   }
 }
 
 /**
- * @param {{id: string}} whatsapp
- * @returns {Promise<{ state: AuthenticationState, saveState: () => void }>}
+ * @param {{id: string}} param0
+ * @returns {Promise<{ state: AuthenticationState, saveState: () => void, removeSession: (whatsappId : string) => void }>}
  */
-const authStateMongo = async (whatsapp) => {
+const authStateMongo = async ({ id }) => {
   await connectToMongo();
   const sessionsCollection = client.db(DB_NAME).collection("sessions");
   const keysCollection = client.db(DB_NAME).collection("keys");
 
   /**@type {AuthenticationCreds} */
   let creds = initAuthCreds();
-  const whatsappId = whatsapp.id;
 
   /**
    * @param {string} type
@@ -51,7 +48,7 @@ const authStateMongo = async (whatsapp) => {
   const saveKey = async (type, key, value) => {
     try {
       await keysCollection.updateOne(
-        { whatsappId, type, key },
+        { id, type, key },
         { $set: { value: JSON.stringify(value) } },
         { upsert: true }
       );
@@ -80,7 +77,7 @@ const authStateMongo = async (whatsapp) => {
    */
   const removeKey = async (type, key) => {
     try {
-      await keysCollection.deleteOne({ whatsappId, type, key });
+      await keysCollection.deleteOne({ id, type, key });
     } catch (error) {
       console.error(`Error deleting key: ${error.message}`);
     }
@@ -89,7 +86,7 @@ const authStateMongo = async (whatsapp) => {
   const saveState = async () => {
     try {
       await sessionsCollection.updateOne(
-        { id: whatsappId },
+        { id },
         {
           $set: {
             session: JSON.stringify(
@@ -106,7 +103,19 @@ const authStateMongo = async (whatsapp) => {
     }
   };
 
-  const sessionDataB = await sessionsCollection.findOne({ id: whatsappId });
+  /**
+   * @param {string} whatsappId
+   */
+  const removeSession = async (whatsappId) => {
+    try {
+      await sessionsCollection.deleteOne({ id: whatsappId });
+      await keysCollection.deleteMany({ whatsappId });
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
+  };
+
+  const sessionDataB = await sessionsCollection.findOne({ id });
   if (sessionDataB) {
     const resultB = JSON.parse(sessionDataB.session, BufferJSON.reviver);
     creds = resultB.creds;
@@ -171,7 +180,7 @@ const authStateMongo = async (whatsapp) => {
         },
         clear: async (type) => {
           try {
-            await keysCollection.deleteMany({ whatsappId, type });
+            await keysCollection.deleteMany({ id, type });
           } catch (error) {
             console.error(`Error clearing keys: ${error.message}`);
           }
@@ -179,6 +188,7 @@ const authStateMongo = async (whatsapp) => {
       },
     },
     saveState,
+    removeSession,
   };
 };
 

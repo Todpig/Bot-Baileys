@@ -13,8 +13,10 @@ class WASocket {
     this.link_review_timeout = 30 * 1000;
   }
   async getWASocket() {
-    const { state, saveState } = await authStateMongo(this.session.id);
-    const WASock = makeWASocket({
+    const { state, saveState, removeSession } = await authStateMongo(
+      this.session
+    );
+    const socket = makeWASocket({
       auth: state,
       options: {
         timeout: this.link_review_timeout,
@@ -26,8 +28,8 @@ class WASocket {
       generateHighQualityLinkPreview: true,
       defaultQueryTimeoutMs: undefined,
     });
-    WASock.ev.on("creds.update", saveState);
-    return WASock;
+    socket.ev.on("creds.update", saveState);
+    return { socket, removeSession };
   }
 }
 

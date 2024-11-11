@@ -21,7 +21,7 @@ class ClientW {
   }
 
   deleteKeys() {
-    this.sock.authState.keys.clear();
+    this.sock.authState.keys.clear && this.sock.authState.keys.clear();
   }
 
   async cancelMessageSending() {
@@ -151,7 +151,8 @@ class ClientW {
   async connectWASocket() {
     try {
       const WASock = new WASocket({ id: this.id });
-      this.sock = await WASock.getWASocket();
+      const { removeSession, socket } = await WASock.getWASocket();
+      this.sock = socket;
       return new Promise((resolve, reject) => {
         this.sock.ev.on("connection.update", async (update) => {
           const { connection, qr, lastDisconnect } = update;
@@ -175,7 +176,7 @@ class ClientW {
             setTimeout(() => {
               if (!this.sock.user) {
                 this.disconectClient();
-                this.deleteSession();
+                removeSession(this.id);
               }
             }, 50 * 1000);
           }

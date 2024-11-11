@@ -44,7 +44,6 @@ routes.post("/message/send", async (req, res) => {
   const { id, text } = message;
   if (!clients.get(sessionName)) return res.end("Client not found");
   messages.set(id, { chatName, text });
-  console.log(messages.size);
   res.end("Sending message!");
 });
 
@@ -100,7 +99,7 @@ function popLastMessage() {
 }
 
 (function () {
-  const sessionName = "558496783580@c.whatsapp.net";
+  const sessionName = "558496441982@s.whatsapp.net";
   clients.set(sessionName, { client: new ClientW(sessionName) });
   clients.get(sessionName).client.connectWASocket();
 
