@@ -1,6 +1,6 @@
 const qrcode = require("qrcode-terminal");
 const { WASocket } = require("./WASocket");
-const { delay } = require("@whiskeysockets/baileys");
+const { delay, isJidGroup } = require("@whiskeysockets/baileys");
 const fs = require("fs");
 const sessionPath = "sessions/";
 
@@ -208,9 +208,18 @@ class ClientW {
       for (let chat of chatsToSend) {
         if (this.isCancelSending) break;
         await delay(1500);
-        const sentMessage = await this.sock.sendMessage(chat.id, {
-          text: message,
-        });
+
+        const sentMessage = await this.sock.sendMessage(
+          chat.id,
+          {
+            text: message,
+          },
+          {
+            ephemeralExpiration:
+              (await this.sock.groupMetadata(chat.id).ephemeralDuration) ||
+              60 * 60 * 24 * 7,
+          }
+        );
         console.log("Message sent");
         this.messagesBeingSent.set(chat.id, sentMessage.key);
       }
